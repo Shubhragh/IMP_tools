@@ -1,0 +1,743 @@
+import tkinter as tk
+from tkinter import ttk, messagebox, filedialog
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
+import json
+from datetime import datetime
+import threading
+import time
+
+class ModernFiniteWellGUI:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Finite Square Well Solver - Professional Edition")
+        self.root.geometry("1200x800")
+        self.root.minsize(1000, 700)
+        
+        # Modern color scheme
+        self.colors = {
+            'primary': '#2E3192',      # Deep blue
+            'secondary': '#FF6B6B',    # Coral red
+            'accent': '#4ECDC4',       # Teal
+            'success': '#45B7D1',      # Light blue
+            'warning': '#FFA07A',      # Light salmon
+            'light': '#F8F9FA',        # Light gray
+            'dark': '#2C3E50',         # Dark blue-gray
+            'white': '#FFFFFF'
+        }
+        
+        # Configure modern styling
+        self.setup_styles()
+        
+        # Variables
+        self.setup_variables()
+        
+        # Create the interface
+        self.create_modern_interface()
+        
+        # Initialize plot
+        self.setup_plot()
+        
+    def setup_styles(self):
+        """Configure modern ttk styles"""
+        style = ttk.Style()
+        style.theme_use('clam')
+        
+        # Configure modern button style
+        style.configure('Modern.TButton',
+                       background=self.colors['primary'],
+                       foreground='white',
+                       borderwidth=0,
+                       focuscolor='none',
+                       font=('Segoe UI', 10, 'bold'))
+        style.map('Modern.TButton',
+                 background=[('active', self.colors['success'])])
+        
+        # Configure accent button
+        style.configure('Accent.TButton',
+                       background=self.colors['accent'],
+                       foreground='white',
+                       borderwidth=0,
+                       focuscolor='none',
+                       font=('Segoe UI', 10, 'bold'))
+        style.map('Accent.TButton',
+                 background=[('active', self.colors['secondary'])])
+        
+        # Configure entry style
+        style.configure('Modern.TEntry',
+                       borderwidth=2,
+                       relief='solid',
+                       bordercolor=self.colors['primary'],
+                       lightcolor=self.colors['light'],
+                       darkcolor=self.colors['light'],
+                       font=('Segoe UI', 10))
+        
+        # Configure frame styles
+        style.configure('Card.TLabelframe',
+                       background=self.colors['white'],
+                       borderwidth=2,
+                       relief='solid',
+                       bordercolor=self.colors['light'])
+        style.configure('Card.TLabelframe.Label',
+                       background=self.colors['white'],
+                       foreground=self.colors['dark'],
+                       font=('Segoe UI', 11, 'bold'))
+        
+    def setup_variables(self):
+        """Initialize all variables"""
+        self.a_var = tk.DoubleVar(value=1.0)
+        self.v0_var = tk.DoubleVar(value=1.0)
+        self.m_var = tk.DoubleVar(value=0.5)
+        self.hbar_var = tk.DoubleVar(value=1.0)
+        self.precision_var = tk.IntVar(value=7)
+        
+        self.solutions = []
+        self.is_solving = False
+        
+    def create_modern_interface(self):
+        """Create the modern professional interface"""
+        # Configure root
+        self.root.configure(bg=self.colors['light'])
+        
+        # Main container
+        main_container = tk.Frame(self.root, bg=self.colors['light'])
+        main_container.pack(fill='both', expand=True, padx=20, pady=20)
+        
+        # Header
+        self.create_header(main_container)
+        
+        # Content area
+        content_frame = tk.Frame(main_container, bg=self.colors['light'])
+        content_frame.pack(fill='both', expand=True, pady=(20, 0))
+        
+        # Left panel (inputs and controls)
+        left_panel = tk.Frame(content_frame, bg=self.colors['light'], width=400)
+        left_panel.pack(side='left', fill='y', padx=(0, 20))
+        left_panel.pack_propagate(False)
+        
+        # Right panel (results and plot)
+        right_panel = tk.Frame(content_frame, bg=self.colors['light'])
+        right_panel.pack(side='right', fill='both', expand=True)
+        
+        # Create panels
+        self.create_input_panel(left_panel)
+        self.create_control_panel(left_panel)
+        self.create_results_panel(right_panel)
+        
+    def create_header(self, parent):
+        """Create professional header"""
+        header_frame = tk.Frame(parent, bg=self.colors['primary'], height=80)
+        header_frame.pack(fill='x')
+        header_frame.pack_propagate(False)
+        
+        # Title
+        title_label = tk.Label(header_frame, 
+                              text="Finite Square Well Solver",
+                              font=('Segoe UI', 24, 'bold'),
+                              bg=self.colors['primary'],
+                              fg='white')
+        title_label.pack(side='left', padx=30, pady=20)
+        
+        # Subtitle
+        subtitle_label = tk.Label(header_frame,
+                                 text="Professional Quantum Mechanics Tool",
+                                 font=('Segoe UI', 11),
+                                 bg=self.colors['primary'],
+                                 fg=self.colors['light'])
+        subtitle_label.pack(side='left', padx=(0, 30), pady=(35, 15))
+        
+        # Version info
+        version_label = tk.Label(header_frame,
+                                text="v2.0 Professional",
+                                font=('Segoe UI', 10),
+                                bg=self.colors['primary'],
+                                fg=self.colors['accent'])
+        version_label.pack(side='right', padx=30, pady=20)
+        
+    def create_input_panel(self, parent):
+        """Create modern input panel"""
+        # Parameters Card
+        params_frame = ttk.LabelFrame(parent, text="  System Parameters  ", 
+                                     style='Card.TLabelframe', padding=20)
+        params_frame.pack(fill='x', pady=(0, 20))
+        
+        # Input grid
+        inputs = [
+            ("Well Width (a)", self.a_var, "Length units"),
+            ("Well Depth (V₀)", self.v0_var, "Energy units"), 
+            ("Particle Mass (m)", self.m_var, "Mass units"),
+            ("ℏ (Reduced Planck)", self.hbar_var, "Action units"),
+            ("Decimal Precision", self.precision_var, "Number of digits")
+        ]
+        
+        for i, (label, var, unit) in enumerate(inputs):
+            # Label
+            lbl = tk.Label(params_frame, text=label, 
+                          font=('Segoe UI', 10, 'bold'),
+                          bg=self.colors['white'],
+                          fg=self.colors['dark'])
+            lbl.grid(row=i, column=0, sticky='w', pady=8)
+            
+            # Entry
+            entry = ttk.Entry(params_frame, textvariable=var, 
+                             style='Modern.TEntry', width=15)
+            entry.grid(row=i, column=1, padx=(10, 5), pady=8)
+            
+            # Unit label
+            unit_lbl = tk.Label(params_frame, text=unit,
+                               font=('Segoe UI', 9, 'italic'),
+                               bg=self.colors['white'],
+                               fg=self.colors['dark'])
+            unit_lbl.grid(row=i, column=2, sticky='w', padx=5, pady=8)
+        
+        # Quick presets
+        preset_frame = ttk.LabelFrame(parent, text="  Quick Presets  ", 
+                                     style='Card.TLabelframe', padding=15)
+        preset_frame.pack(fill='x', pady=(0, 20))
+        
+        presets = [
+            ("Standard Problem", (1.0, 1.0, 0.5, 1.0)),
+            ("Deep Well", (2.0, 10.0, 0.5, 1.0)),
+            ("Wide Well", (5.0, 2.0, 0.5, 1.0)),
+            ("Shallow Well", (1.0, 0.2, 0.5, 1.0))
+        ]
+        
+        for i, (name, params) in enumerate(presets):
+            btn = ttk.Button(preset_frame, text=name,
+                           command=lambda p=params: self.load_preset(p),
+                           style='Accent.TButton')
+            btn.grid(row=i//2, column=i%2, padx=5, pady=5, sticky='ew')
+        
+        preset_frame.columnconfigure(0, weight=1)
+        preset_frame.columnconfigure(1, weight=1)
+        
+    def create_control_panel(self, parent):
+        """Create control panel with modern buttons"""
+        control_frame = ttk.LabelFrame(parent, text="  Controls  ", 
+                                      style='Card.TLabelframe', padding=20)
+        control_frame.pack(fill='x', pady=(0, 20))
+        
+        # Progress bar
+        self.progress = ttk.Progressbar(control_frame, mode='indeterminate')
+        self.progress.pack(fill='x', pady=(0, 15))
+        
+        # Status label
+        self.status_label = tk.Label(control_frame, 
+                                    text="Ready to solve",
+                                    font=('Segoe UI', 10),
+                                    bg=self.colors['white'],
+                                    fg=self.colors['success'])
+        self.status_label.pack(pady=(0, 15))
+        
+        # Main action buttons
+        btn_frame = tk.Frame(control_frame, bg=self.colors['white'])
+        btn_frame.pack(fill='x')
+        
+        # Solve button
+        self.solve_btn = ttk.Button(btn_frame, text="🧮 SOLVE",
+                                   command=self.solve_threaded,
+                                   style='Modern.TButton')
+        self.solve_btn.pack(fill='x', pady=2)
+        
+        # Secondary buttons
+        secondary_frame = tk.Frame(control_frame, bg=self.colors['white'])
+        secondary_frame.pack(fill='x', pady=(10, 0))
+        
+        ttk.Button(secondary_frame, text="📊 Plot",
+                  command=self.update_plot,
+                  style='Accent.TButton').pack(side='left', fill='x', expand=True, padx=(0, 2))
+        
+        ttk.Button(secondary_frame, text="💾 Save",
+                  command=self.save_results,
+                  style='Accent.TButton').pack(side='right', fill='x', expand=True, padx=(2, 0))
+        
+    def create_results_panel(self, parent):
+        """Create modern results panel with embedded plot"""
+        # Results notebook
+        self.notebook = ttk.Notebook(parent)
+        self.notebook.pack(fill='both', expand=True)
+        
+        # Results tab
+        results_frame = ttk.Frame(self.notebook)
+        self.notebook.add(results_frame, text='📋 Results')
+        
+        # Create results display
+        results_container = tk.Frame(results_frame, bg=self.colors['white'])
+        results_container.pack(fill='both', expand=True, padx=10, pady=10)
+        
+        # Results header
+        header_frame = tk.Frame(results_container, bg=self.colors['primary'], height=40)
+        header_frame.pack(fill='x', pady=(0, 10))
+        header_frame.pack_propagate(False)
+        
+        tk.Label(header_frame, text="Solution Results", 
+                font=('Segoe UI', 12, 'bold'),
+                bg=self.colors['primary'], fg='white').pack(pady=10)
+        
+        # Scrollable results
+        canvas = tk.Canvas(results_container, bg=self.colors['white'])
+        scrollbar = ttk.Scrollbar(results_container, orient="vertical", command=canvas.yview)
+        self.scrollable_frame = tk.Frame(canvas, bg=self.colors['white'])
+        
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+        
+        # Plot tab
+        plot_frame = ttk.Frame(self.notebook)
+        self.notebook.add(plot_frame, text='📈 Visualization')
+        
+        # Matplotlib integration
+        self.fig = Figure(figsize=(10, 6), dpi=100)
+        self.canvas = FigureCanvasTkAgg(self.fig, plot_frame)
+        self.canvas.get_tk_widget().pack(fill='both', expand=True, padx=10, pady=10)
+        
+    def setup_plot(self):
+        """Initialize the plot"""
+        self.ax = self.fig.add_subplot(111)
+        self.ax.set_title("Transcendental Equation Solutions", fontsize=14, fontweight='bold')
+        self.ax.grid(True, alpha=0.3)
+        self.fig.tight_layout()
+        self.canvas.draw()
+        
+    def load_preset(self, params):
+        """Load preset parameters"""
+        self.a_var.set(params[0])
+        self.v0_var.set(params[1])
+        self.m_var.set(params[2])
+        self.hbar_var.set(params[3])
+        self.status_label.config(text=f"Loaded preset: a={params[0]}, V₀={params[1]}")
+        
+    def validate_inputs(self):
+        """Validate user inputs"""
+        try:
+            a = self.a_var.get()
+            V0 = self.v0_var.get()
+            m = self.m_var.get()
+            hbar = self.hbar_var.get()
+            precision = self.precision_var.get()
+            
+            if any(x <= 0 for x in [a, V0, m, hbar]):
+                raise ValueError("All physical parameters must be positive!")
+            
+            if precision <= 0 or precision > 15:
+                raise ValueError("Precision must be between 1 and 15!")
+                
+            return True, None
+            
+        except Exception as e:
+            return False, str(e)
+            
+    def solve_threaded(self):
+        """Run solver in separate thread"""
+        if self.is_solving:
+            return
+            
+        valid, error = self.validate_inputs()
+        if not valid:
+            messagebox.showerror("Input Error", error)
+            return
+            
+        self.is_solving = True
+        self.solve_btn.config(state='disabled')
+        self.progress.start(10)
+        self.status_label.config(text="Solving...", fg=self.colors['warning'])
+        
+        # Run in thread to prevent GUI freezing
+        thread = threading.Thread(target=self.solve)
+        thread.daemon = True
+        thread.start()
+        
+    def solve(self):
+        """Main solver with proper numerical handling"""
+        try:
+            # Get parameters
+            a = self.a_var.get()
+            V0 = self.v0_var.get()
+            m = self.m_var.get()
+            hbar = self.hbar_var.get()
+            precision = self.precision_var.get()
+            
+            # Calculate z0
+            z0 = np.sqrt(2 * m * V0 / hbar**2)
+            
+            def transcendental_equation(z):
+                """Properly implemented transcendental equation"""
+                # Strict bounds checking - AVOID z=0 completely
+                if z <= 1e-8 or z >= z0 - 1e-8:
+                    return 1000
+                    
+                try:
+                    ratio = z0 / z
+                    ratio_squared = ratio**2
+                    
+                    # Must have ratio > 1 for bound states
+                    if ratio_squared <= 1.01:  # Small safety margin
+                        return 1000
+                    
+                    numerator = 2 * np.sqrt(ratio_squared - 1)
+                    denominator = 2 - ratio_squared
+                    
+                    # Avoid division by zero
+                    if abs(denominator) < 1e-12:
+                        return 1000
+                        
+                    rhs = numerator / denominator
+                    lhs = np.tan(z * a)
+                    
+                    return lhs - rhs
+                    
+                except (ValueError, OverflowError, ZeroDivisionError):
+                    return 1000
+            
+            def newton_raphson(z_start, max_iter=200, tol=1e-14):
+                """Robust Newton-Raphson implementation"""
+                z = z_start
+                
+                for i in range(max_iter):
+                    f_val = transcendental_equation(z)
+                    
+                    if abs(f_val) < tol:
+                        return z, True
+                    
+                    # Numerical derivative
+                    h = 1e-10
+                    f_plus = transcendental_equation(z + h)
+                    f_minus = transcendental_equation(z - h)
+                    
+                    if abs(f_plus) > 999 or abs(f_minus) > 999:
+                        break
+                        
+                    f_prime = (f_plus - f_minus) / (2 * h)
+                    
+                    if abs(f_prime) < 1e-15:
+                        break
+                        
+                    z_new = z - f_val / f_prime
+                    
+                    # Keep in bounds with strong constraints
+                    z_new = max(0.05, min(z_new, z0 - 0.05))
+                    
+                    if abs(z_new - z) < tol:
+                        return z_new, True
+                        
+                    z = z_new
+                
+                return None, False
+            
+            # Search for solutions with better starting points
+            # Use wider range but avoid problematic regions
+            n_starts = 25
+            start_points = np.linspace(0.2, z0 - 0.2, n_starts)
+            
+            solutions = []
+            
+            for z_start in start_points:
+                result, converged = newton_raphson(z_start)
+                
+                if converged and result is not None:
+                    # Strict verification
+                    verification = abs(transcendental_equation(result))
+                    
+                    if verification < 1e-12:  # Very strict verification
+                        # Check if it's truly new
+                        is_new = True
+                        for existing_z, _ in solutions:
+                            if abs(result - existing_z) < 1e-10:
+                                is_new = False
+                                break
+                        
+                        if is_new and result > 0.01:  # Additional safety check
+                            energy = -(z0**2 - result**2) * hbar**2 / (2 * m)
+                            solutions.append((result, energy))
+            
+            # Sort by energy (most bound first)
+            solutions.sort(key=lambda x: x[1])
+            
+            # Update GUI in main thread
+            self.root.after(0, self.display_results, solutions, z0, a, V0, m, hbar, precision)
+            
+        except Exception as e:
+            self.root.after(0, self.handle_error, str(e))
+            
+    def display_results(self, solutions, z0, a, V0, m, hbar, precision):
+        """Display results in modern format"""
+        # Clear previous results
+        for widget in self.scrollable_frame.winfo_children():
+            widget.destroy()
+        
+        self.solutions = solutions
+        
+        # System info card
+        info_frame = tk.Frame(self.scrollable_frame, bg=self.colors['light'], 
+                             relief='solid', bd=1)
+        info_frame.pack(fill='x', padx=10, pady=10)
+        
+        tk.Label(info_frame, text="System Information", 
+                font=('Segoe UI', 12, 'bold'),
+                bg=self.colors['primary'], fg='white').pack(fill='x', pady=2)
+        
+        info_text = f"""
+Parameters: a = {a}, V₀ = {V0}, m = {m}, ℏ = {hbar}
+Characteristic parameter: z₀ = {z0:.6f}
+Valid range for bound states: 0 < z < {z0:.6f}
+Number of bound states found: {len(solutions)}
+        """
+        
+        tk.Label(info_frame, text=info_text.strip(), 
+                font=('Consolas', 10), justify='left',
+                bg=self.colors['light'], fg=self.colors['dark']).pack(padx=15, pady=10)
+        
+        # Results cards
+        if solutions:
+            for i, (z_val, energy) in enumerate(solutions):
+                self.create_solution_card(i+1, z_val, energy, precision, m, hbar)
+        else:
+            # No solutions card
+            no_sol_frame = tk.Frame(self.scrollable_frame, bg=self.colors['warning'],
+                                   relief='solid', bd=2)
+            no_sol_frame.pack(fill='x', padx=10, pady=10)
+            
+            tk.Label(no_sol_frame, text="⚠️ No Bound States Found",
+                    font=('Segoe UI', 14, 'bold'),
+                    bg=self.colors['warning'], fg=self.colors['dark']).pack(pady=15)
+            
+            suggestion_text = """
+The potential well is too shallow or narrow to support bound states.
+Try increasing V₀ (well depth) or a (well width).
+For bound states to exist, typically z₀ > π/2 ≈ 1.57
+            """
+            
+            tk.Label(no_sol_frame, text=suggestion_text.strip(),
+                    font=('Segoe UI', 10), justify='center',
+                    bg=self.colors['warning'], fg=self.colors['dark']).pack(padx=20, pady=(0, 15))
+        
+        # Update plot
+        self.update_plot()
+        
+        # Reset controls
+        self.progress.stop()
+        self.solve_btn.config(state='normal')
+        self.is_solving = False
+        
+        if solutions:
+            self.status_label.config(text=f"✅ Found {len(solutions)} bound state(s)", 
+                                   fg=self.colors['success'])
+        else:
+            self.status_label.config(text="⚠️ No bound states found", 
+                                   fg=self.colors['warning'])
+    
+    def create_solution_card(self, num, z_val, energy, precision, m, hbar):
+        """Create a beautiful solution card"""
+        card_frame = tk.Frame(self.scrollable_frame, bg=self.colors['white'],
+                             relief='solid', bd=1)
+        card_frame.pack(fill='x', padx=10, pady=5)
+        
+        # Header
+        header_frame = tk.Frame(card_frame, bg=self.colors['success'], height=35)
+        header_frame.pack(fill='x')
+        header_frame.pack_propagate(False)
+        
+        tk.Label(header_frame, text=f"🎯 Bound State {num}",
+                font=('Segoe UI', 11, 'bold'),
+                bg=self.colors['success'], fg='white').pack(pady=8)
+        
+        # Content
+        content_frame = tk.Frame(card_frame, bg=self.colors['white'])
+        content_frame.pack(fill='x', padx=15, pady=10)
+        
+        # Main results
+        results_text = f"""z = {z_val:.{precision}f}
+E = {energy:.{precision}f}"""
+        
+        tk.Label(content_frame, text=results_text,
+                font=('Consolas', 12, 'bold'), justify='left',
+                bg=self.colors['white'], fg=self.colors['dark']).pack(anchor='w')
+        
+        # Additional info
+        binding_energy = abs(energy)
+        if binding_energy > 0:
+            try:
+                penetration_depth = hbar / np.sqrt(2 * m * binding_energy)
+                additional_text = f"""
+Binding Energy: {binding_energy:.{precision}f}
+Penetration Depth: ≈ {penetration_depth:.3f}
+Classical Forbidden Region: Outside well boundaries"""
+                
+                tk.Label(content_frame, text=additional_text.strip(),
+                        font=('Segoe UI', 9), justify='left',
+                        bg=self.colors['white'], fg=self.colors['dark']).pack(anchor='w', pady=(5, 0))
+            except:
+                pass  # Skip if calculation fails
+    
+    def update_plot(self):
+        """Update the visualization plot"""
+        self.ax.clear()
+        
+        try:
+            a = self.a_var.get()
+            V0 = self.v0_var.get()
+            m = self.m_var.get()
+            hbar = self.hbar_var.get()
+            
+            z0 = np.sqrt(2 * m * V0 / hbar**2)
+            
+            # Create z range avoiding problematic regions
+            z_range = np.linspace(0.01, z0 - 0.01, 2000)
+            
+            lhs_values = []
+            rhs_values = []
+            
+            for z in z_range:
+                try:
+                    # Left-hand side
+                    lhs = np.tan(z * a)
+                    
+                    # Right-hand side
+                    ratio = z0 / z
+                    ratio_squared = ratio**2
+                    if ratio_squared > 1:
+                        numerator = 2 * np.sqrt(ratio_squared - 1)
+                        denominator = 2 - ratio_squared
+                        if abs(denominator) > 1e-12:
+                            rhs = numerator / denominator
+                        else:
+                            rhs = np.nan
+                    else:
+                        rhs = np.nan
+                    
+                    # Limit extreme values for better visualization
+                    lhs_values.append(lhs if abs(lhs) < 50 else np.nan)
+                    rhs_values.append(rhs if abs(rhs) < 50 else np.nan)
+                    
+                except:
+                    lhs_values.append(np.nan)
+                    rhs_values.append(np.nan)
+            
+            # Plot the functions
+            self.ax.plot(z_range, lhs_values, 'b-', linewidth=2, 
+                        label=f'tan({a}z)' if a == 1 else f'tan({a:.1f}z)')
+            self.ax.plot(z_range, rhs_values, 'r-', linewidth=2,
+                        label='2√((z₀/z)² - 1)/(2 - (z₀/z)²)')
+            
+            # Mark solutions
+            if hasattr(self, 'solutions') and self.solutions:
+                for i, (z_sol, energy) in enumerate(self.solutions):
+                    try:
+                        y_val = np.tan(z_sol * a)
+                        if abs(y_val) < 50:
+                            self.ax.plot(z_sol, y_val, 'go', markersize=8, 
+                                       label=f'Solution {i+1}: z={z_sol:.4f}')
+                    except:
+                        pass
+            
+            # Formatting
+            self.ax.set_xlim(0, z0)
+            self.ax.set_ylim(-20, 20)
+            self.ax.set_xlabel('z', fontsize=12)
+            self.ax.set_ylabel('Function value', fontsize=12)
+            self.ax.set_title(f'Transcendental Equation Solutions\na={a}, V₀={V0}, m={m}, ℏ={hbar}', 
+                             fontsize=12, fontweight='bold')
+            self.ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+            self.ax.grid(True, alpha=0.3)
+            self.ax.axhline(y=0, color='k', linestyle='--', alpha=0.5)
+            
+            self.fig.tight_layout()
+            self.canvas.draw()
+            
+        except Exception as e:
+            self.ax.text(0.5, 0.5, f'Plot Error: {str(e)}', 
+                        transform=self.ax.transAxes, ha='center', va='center')
+            self.canvas.draw()
+    
+    def save_results(self):
+        """Save results to file"""
+        if not hasattr(self, 'solutions') or not self.solutions:
+            messagebox.showwarning("No Results", "No results to save! Please solve first.")
+            return
+            
+        try:
+            filename = filedialog.asksaveasfilename(
+                defaultextension=".json",
+                filetypes=[("JSON files", "*.json"), ("Text files", "*.txt"), ("All files", "*.*")]
+            )
+            
+            if filename:
+                data = {
+                    'timestamp': datetime.now().isoformat(),
+                    'parameters': {
+                        'a': self.a_var.get(),
+                        'V0': self.v0_var.get(),
+                        'm': self.m_var.get(),
+                        'hbar': self.hbar_var.get(),
+                        'precision': self.precision_var.get()
+                    },
+                    'z0': np.sqrt(2 * self.m_var.get() * self.v0_var.get() / self.hbar_var.get()**2),
+                    'solutions': [
+                        {
+                            'bound_state': i + 1,
+                            'z': z_val,
+                            'energy': energy,
+                            'binding_energy': abs(energy)
+                        }
+                        for i, (z_val, energy) in enumerate(self.solutions)
+                    ]
+                }
+                
+                if filename.endswith('.json'):
+                    with open(filename, 'w') as f:
+                        json.dump(data, f, indent=2)
+                else:
+                    # Save as text
+                    with open(filename, 'w') as f:
+                        f.write("Finite Square Well Results\n")
+                        f.write("=" * 50 + "\n")
+                        f.write(f"Generated: {data['timestamp']}\n\n")
+                        f.write("Parameters:\n")
+                        for key, value in data['parameters'].items():
+                            f.write(f"  {key} = {value}\n")
+                        f.write(f"\nz₀ = {data['z0']:.6f}\n\n")
+                        f.write("Solutions:\n")
+                        for sol in data['solutions']:
+                            f.write(f"  Bound State {sol['bound_state']}:\n")
+                            f.write(f"    z = {sol['z']:.10f}\n")
+                            f.write(f"    E = {sol['energy']:.10f}\n")
+                            f.write(f"    Binding Energy = {sol['binding_energy']:.10f}\n\n")
+                
+                messagebox.showinfo("Success", f"Results saved to {filename}")
+                
+        except Exception as e:
+            messagebox.showerror("Save Error", f"Failed to save: {str(e)}")
+    
+    def handle_error(self, error_msg):
+        """Handle errors in main thread"""
+        self.progress.stop()
+        self.solve_btn.config(state='normal')
+        self.is_solving = False
+        self.status_label.config(text="❌ Error occurred", fg=self.colors['secondary'])
+        messagebox.showerror("Calculation Error", f"An error occurred: {error_msg}")
+
+def main():
+    """Main function to run the application"""
+    root = tk.Tk()
+    app = ModernFiniteWellGUI(root)
+    
+    # Center the window
+    root.update_idletasks()
+    x = (root.winfo_screenwidth() // 2) - (root.winfo_width() // 2)
+    y = (root.winfo_screenheight() // 2) - (root.winfo_height() // 2)
+    root.geometry(f'+{x}+{y}')
+    
+    root.mainloop()
+
+if __name__ == "__main__":
+    main()
