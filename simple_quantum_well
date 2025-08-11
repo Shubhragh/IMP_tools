@@ -134,7 +134,7 @@ class ModernFiniteWellGUI:
         
         # Title
         title_label = tk.Label(header_frame, 
-                              text="Finite Square Well Solver - Made by Kumud ",
+                              text="Finite Square Well Solver",
                               font=('Segoe UI', 24, 'bold'),
                               bg=self.colors['primary'],
                               fg='white')
