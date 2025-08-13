@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}{{ solver_info.name }} - Quantum Solver Suite{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Input Panel -->
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <span class="solver-icon">{{ solver_info.icon }}</span>
+                        {{ solver_info.name }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">{{ solver_info.description }}</p>
+                    
+                    <!-- Parameter Form -->
+                    <form id="solver-form">
+                        {% for param_id, param_info in parameters.items() %}
+                        <div class="mb-3">
+                            <label for="{{ param_id }}" class="form-label">
+                                {{ param_info.name }}
+                                <small class="text-muted">({{ param_info.unit }})</small>
+                            </label>
+                            
+                            {% if param_info.type == 'float' %}
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="{{ param_id }}" 
+                                   name="{{ param_id }}"
+                                   step="any"
+                                   min="{{ param_info.min }}"
+                                   max="{{ param_info.max }}"
+                                   value="{{ param_info.default }}"
+                                   required>
+                            {% elif param_info.type == 'int' %}
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="{{ param_id }}" 
+                                   name="{{ param_id }}"
+                                   step="1"
+                                   min="{{ param_info.min }}"
+                                   max="{{ param_info.max }}"
+                                   value="{{ param_info.default }}"
+                                   required>
+                            {% endif %}
+                            
+                            <small class="form-text text-muted">{{ param_info.description }}</small>
+                        </div>
+                        {% endfor %}
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg" id="solve-btn">
+                                <i class="fas fa-calculator"></i> Solve
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <!-- Examples -->
+                    <div class="mt-4">
+                        <h6>Quick Examples:</h6>
+                        <div class="d-grid gap-2">
+                            {% for example_id, example_info in examples.items() %}
+                            <button class="btn btn-outline-secondary btn-sm example-btn" 
+                                    data-solver-id="{{ solver_id }}"
+                                    data-example-id="{{ example_id }}">
+                                {{ example_info.name }}
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress -->
+            <div class="card" id="progress-card" style="display: none;">
+                <div class="card-body text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Solving quantum problem...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Panel -->
+        <div class="col-lg-8">
+            <!-- Results Display -->
+            <div id="results-container" style="display: none;">
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-check-circle"></i> Results
+                        </h5>
+                    </div>
+                    <div class="card-body" id="results-content">
+                        <!-- Results will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Plot Display -->
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-line"></i> Visualization
+                        </h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <img id="plot-image" class="img-fluid" alt="Quantum mechanics plot">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Welcome Message -->
+            <div id="welcome-message">
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-rocket fa-4x text-muted mb-4"></i>
+                        <h4 class="text-muted">Ready to solve quantum problems!</h4>
+                        <p class="text-muted">Enter your parameters and click "Solve" to begin.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize solver page
+$(document).ready(function() {
+    const solverId = '{{ solver_id }}';
+    
+    // Handle form submission
+    $('#solver-form').on('submit', function(e) {
+        e.preventDefault();
+        solveProblem(solverId);
+    });
+    
+    // Handle example buttons
+    $('.example-btn').on('click', function() {
+        const exampleId = $(this).data('example-id');
+        loadExample(solverId, exampleId);
+    });
+});
+
+function solveProblem(solverId) {
+    // Show progress
+    $('#progress-card').show();
+    $('#results-container').hide();
+    $('#welcome-message').hide();
+    $('#solve-btn').prop('disabled', true);
+    
+    // Collect form data
+    const formData = {};
+    $('#solver-form').serializeArray().forEach(function(item) {
+        formData[item.name] = item.value;
+    });
+    
+    // Send request
+    $.ajax({
+        url: `/api/solve/${solverId}`,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(formData),
+        success: function(response) {
+            displayResults(response);
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON ? xhr.responseJSON.error : 'Unknown error';
+            alert('Error: ' + error);
+        },
+        complete: function() {
+            $('#progress-card').hide();
+            $('#solve-btn').prop('disabled', false);
+        }
+    });
+}
+
+function loadExample(solverId, exampleId) {
+    $.get(`/api/example/${solverId}/${exampleId}`, function(example) {
+        // Populate form with example parameters
+        Object.keys(example.parameters).forEach(function(key) {
+            $(`#${key}`).val(example.parameters[key]);
+        });
+    });
+}
+
+function displayResults(response) {
+    const results = response.results;
+    let html = '';
+    
+    // Format results based on solver type
+    if (results.system_info) {
+        html += '<div class="mb-4">';
+        html += '<h6 class="text-primary">System Information</h6>';
+        html += '<div class="row">';
+        Object.keys(results.system_info).forEach(function(key) {
+            const value = results.system_info[key];
+            html += `<div class="col-md-6 mb-2">
+                        <strong>${key.replace('_', ' ').toUpperCase()}:</strong> ${value}
+                     </div>`;
+        });
+        html += '</div></div>';
+    }
+    
+    // Display specific results
+    if (results.bound_states) {
+        html += '<h6 class="text-primary">Bound States</h6>';
+        if (results.bound_states.length > 0) {
+            html += '<div class="table-responsive">';
+            html += '<table class="table table-striped">';
+            html += '<thead><tr><th>State</th><th>z-value</th><th>Energy</th><th>Binding Energy</th></tr></thead>';
+            html += '<tbody>';
+            results.bound_states.forEach(function(state) {
+                html += `<tr>
+                            <td>n = ${state.state_number}</td>
+                            <td>${state.z_value}</td>
+                            <td>${state.energy}</td>
+                            <td>${state.binding_energy}</td>
+                         </tr>`;
+            });
+            html += '</tbody></table></div>';
+        } else {
+            html += '<div class="alert alert-warning">No bound states found for these parameters.</div>';
+        }
+    }
+    
+    if (results.energy_levels) {
+        html += '<h6 class="text-primary">Energy Levels</h6>';
+        html += '<div class="table-responsive">';
+        html += '<table class="table table-striped">';
+        html += '<thead><tr><th>n</th><th>Energy</th><th>Classical Turning Points</th></tr></thead>';
+        html += '<tbody>';
+        results.energy_levels.forEach(function(level) {
+            html += `<tr>
+                        <td>${level.n}</td>
+                        <td>${level.energy}</td>
+                        <td>±${level.classical_turning_points}</td>
+                     </tr>`;
+        });
+        html += '</tbody></table></div>';
+    }
+    
+    $('#results-content').html(html);
+    $('#results-container').show();
+    
+    // Display plot
+    if (response.plot) {
+        $('#plot-image').attr('src', response.plot);
+    }
+}
+</script>
+{% endblock %}

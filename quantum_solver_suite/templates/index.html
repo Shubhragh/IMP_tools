@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <!-- Hero Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="hero-section text-center py-5">
+                <h1 class="display-4 mb-4">
+                    <i class="fas fa-atom text-primary"></i>
+                    Quantum Mechanics Solver Suite
+                </h1>
+                <p class="lead">Professional tools for solving quantum mechanical problems with precision and elegance</p>
+                <hr class="my-4">
+                <p>Choose from our collection of specialized solvers to explore the quantum world</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Solver Cards -->
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">Available Solvers</h2>
+        </div>
+        
+        {% for solver_id, solver_info in solvers.items() %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card solver-card h-100 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <span class="solver-icon">{{ solver_info.icon }}</span>
+                        {{ solver_info.name }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{{ solver_info.description }}</p>
+                    <div class="mb-3">
+                        <span class="badge bg-info">{{ solver_info.category }}</span>
+                        <span class="badge 
+                            {% if solver_info.difficulty == 'Beginner' %}bg-success
+                            {% elif solver_info.difficulty == 'Intermediate' %}bg-warning
+                            {% else %}bg-danger{% endif %}">
+                            {{ solver_info.difficulty }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="{{ url_for('solver_page', solver_id=solver_id) }}" 
+                       class="btn btn-primary btn-block w-100">
+                        <i class="fas fa-play"></i> Launch Solver
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Features Section -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <h2 class="text-center mb-4">Features</h2>
+        </div>
+        <div class="col-md-4 text-center mb-4">
+            <div class="feature-card">
+                <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
+                <h4>Interactive Visualization</h4>
+                <p>Real-time plots and graphs to understand quantum phenomena</p>
+            </div>
+        </div>
+        <div class="col-md-4 text-center mb-4">
+            <div class="feature-card">
+                <i class="fas fa-cogs fa-3x text-primary mb-3"></i>
+                <h4>Multiple Solvers</h4>
+                <p>Comprehensive collection of quantum mechanics problems</p>
+            </div>
+        </div>
+        <div class="col-md-4 text-center mb-4">
+            <div class="feature-card">
+                <i class="fas fa-download fa-3x text-primary mb-3"></i>
+                <h4>Export Results</h4>
+                <p>Save calculations and plots for reports and presentations</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

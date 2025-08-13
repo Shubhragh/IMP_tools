@@ -1,0 +1,189 @@
+/* Custom Quantum Solver Suite Styles */
+
+:root {
+    --primary-color: #2E3192;
+    --secondary-color: #FF6B6B;
+    --accent-color: #4ECDC4;
+    --success-color: #45B7D1;
+    --warning-color: #FFA07A;
+    --light-color: #F8F9FA;
+    --dark-color: #2C3E50;
+}
+
+body {
+    background-color: var(--light-color);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Navigation */
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+.navbar-brand i {
+    margin-right: 0.5rem;
+    animation: spin 10s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Hero Section */
+.hero-section {
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    color: white;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+}
+
+.hero-section .display-4 {
+    font-weight: 300;
+}
+
+/* Solver Cards */
+.solver-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.solver-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+}
+
+.solver-icon {
+    font-size: 1.5rem;
+    margin-right: 0.5rem;
+}
+
+.card-header {
+    border-radius: 15px 15px 0 0 !important;
+}
+
+/* Feature Cards */
+.feature-card {
+    padding: 2rem;
+    text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-3px);
+}
+
+.feature-card i {
+    transition: color 0.3s ease;
+}
+
+.feature-card:hover i {
+    color: var(--accent-color) !important;
+}
+
+/* Forms */
+.form-control {
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(46, 49, 146, 0.25);
+}
+
+/* Buttons */
+.btn {
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    transform: translateY(-1px);
+}
+
+/* Results */
+#results-container {
+    animation: fadeInUp 0.5s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Tables */
+.table {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table thead th {
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: 600;
+    border: none;
+}
+
+/* Progress */
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .hero-section {
+        padding: 2rem 1rem !important;
+    }
+    
+    .hero-section .display-4 {
+        font-size: 2rem;
+    }
+    
+    .feature-card {
+        padding: 1rem;
+    }
+}
+
+/* Math equations */
+.MathJax {
+    font-size: 1.1em !important;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #1a1a1a;
+        color: #ffffff;
+    }
+    
+    .card {
+        background-color: #2d2d2d;
+        border-color: #404040;
+    }
+    
+    .form-control {
+        background-color: #2d2d2d;
+        border-color: #404040;
+        color: #ffffff;
+    }
+}
